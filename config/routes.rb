@@ -9,7 +9,6 @@ Rails.application.routes.draw do
   get 'auth/callback/github', to: 'api#github_callback'
 
   #Do not place any routes below this one
-  get '*other', to: 'static#index'
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?
   end
