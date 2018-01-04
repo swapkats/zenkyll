@@ -1,4 +1,4 @@
-require 'admin_user'
+require 'application_record'
 
 class AdminUser < ApplicationRecord
   # Include default devise modules. Others available are:
