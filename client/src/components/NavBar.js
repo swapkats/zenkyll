@@ -34,7 +34,7 @@ class NavBar extends Component {
         mode="horizontal"
       >
         <Menu.Item key="home">
-          <Link to="/home">
+          <Link to="/">
             <Icon type="home" />Home
           </Link>
         </Menu.Item>

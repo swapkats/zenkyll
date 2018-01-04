@@ -9,9 +9,9 @@ import cookie from '../lib/cookie';
 
 class Home extends Component {
   componentWillMount() {
-    if (cookie.get('GIT_TOKEN')) {
-      this.props.history.push('/repos');
-    }
+    // if (cookie.get('GIT_TOKEN')) {
+    //   this.props.history.push('/repos');
+    // }
     const parsed = url.parse(window.location.href, true);
     const code = parsed.query && parsed.query.code;
     if (code) {

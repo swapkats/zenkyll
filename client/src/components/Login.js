@@ -8,18 +8,6 @@ const FormItem = Form.Item;
 class Login extends Component {
   state = { email: '', password: '' };
 
-  handleChange = event => {
-    const { id, value } = event.target;
-    this.setState({ [id]: value });
-  }
-
-  // handleSubmit = event => {
-  //   event.preventDefault();
-  //   const { dispatch, history } = this.props;
-  //   const { email, password } = this.state;
-  //   dispatch(handleLogin(email, password, history));
-  // }
-
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {

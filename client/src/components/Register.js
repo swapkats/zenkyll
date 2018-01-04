@@ -1,75 +1,65 @@
 import React, { Component } from 'react';
-import { Header, Form, Button, Segment } from 'semantic-ui-react';
 import { connect } from 'react-redux';
 import { registerUser } from '../actions/auth';
 import { setFlash } from '../actions/flash';
+import { Link, withRouter } from 'react-router-dom';
+import { Card, Form, Icon, Input, Button, Checkbox } from 'antd';
+const FormItem = Form.Item;
 
 class Register extends Component {
   state = { email: '', password: '', passwordConfirmation: '' };
 
   handleSubmit = event => {
     event.preventDefault();
-    const { email, password, passwordConfirmation } = this.state;
-    const { dispatch, history } = this.props;
-    if (password === passwordConfirmation) {
-      dispatch(registerUser(email, password, passwordConfirmation, history));
-    } else dispatch(setFlash('Passwords do not match!, please try again', 'red'));
-  }
-
-  handleChange = event => {
-    // use e to grab the id off the element also the value and set state
-    // const { id, value } = event.target;
-    const id = event.target.id;
-    const value = event.target.value;
-    this.setState({ [id]: value });
+    this.props.form.validateFields((err, values) => {
+      const { email, password, passwordConfirmation } = values;
+      if (!err) {
+        // console.log('Received values of form: ', values);
+        if (password === passwordConfirmation) {
+          this.props.registerUser(email, password, passwordConfirmation, this.props.history);
+        } else this.props.setFlash('Passwords do not match!, please try again', 'red');
+      }
+    });
   }
 
   render() {
-    const { email, password, passwordConfirmation } = this.state;
-
+    const { getFieldDecorator } = this.props.form;
     return (
-      <Segment basic>
-        <Header as='h1' textAlign='center'>Register Component</Header>
-        <Form onSubmit={this.handleSubmit}>
-          <Form.Field>
-            <label htmlFor='email'>Email</label>
-            <input
-              id='email'
-              placeholder='Email'
-              required
-              value={email}
-              onChange={this.handleChange}
-            />
-          </Form.Field>
-          <Form.Field>
-            <label htmlFor='password'>Password</label>
-            <input
-              id='password'
-              placeholder='Password'
-              type='password'
-              required
-              value={password}
-              onChange={this.handleChange}
-            />
-          </Form.Field>
-          <Form.Field>
-            <label htmlFor='passwordConfirmation'>Password Confirmation</label>
-            <input
-              id='passwordConfirmation'
-              placeholder='Password Confirmation'
-              type='password'
-              required
-              value={passwordConfirmation}
-              onChange={this.handleChange}
-            />
-          </Form.Field>
-          <Segment basic textAlign='center'>
-            <Button type='submit'>Submit</Button>
-          </Segment>
-        </Form>
-      </Segment>
+      <div style={{display: 'flex', 'justifyContent': 'center', 'alignItems': 'center', background: '#fafafa', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}>
+        <Card style={{ width: 300 }}>
+          <Form onSubmit={this.handleSubmit}>
+            <h1>Register</h1>
+            <FormItem>
+              {getFieldDecorator('email', {
+                rules: [{ required: true, message: 'Please input your email!' }],
+              })(
+                <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="Email" />
+              )}
+
+            </FormItem>
+            <FormItem>
+              {getFieldDecorator('password', {
+                rules: [{ required: true, message: 'Please input your Password!' }],
+              })(
+                <Input prefix={<Icon type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />} type="password" placeholder="Password" />
+              )}
+            </FormItem>
+            <FormItem>
+              {getFieldDecorator('passwordConfirmation', {
+                rules: [{ required: true, message: 'Please confirm your password!' }],
+              })(
+                <Input prefix={<Icon type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />} type="password" placeholder="Password Confirmation" />
+              )}
+            </FormItem>
+            <FormItem>
+              <Button type="primary" htmlType="submit" style={{width: '100%'}}>Submit</Button>
+            </FormItem>
+            Already registered? <Link to="/register">Login</Link>
+          </Form>
+        </Card>
+      </div>
     );
   }
 }
 
-export default connect()(Register);
+export default connect(()=>({}), { registerUser, setFlash })(Form.create()(withRouter(Register)));

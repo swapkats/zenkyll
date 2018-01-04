@@ -41,7 +41,7 @@ export default class AuthenticationPage extends React.Component {
           disabled={inProgress}
           onClick={this.handleLogin}
         >
-          <Icon type="github" /> {inProgress ? "Logging in..." : "Login with GitHub"}
+          <Icon type="github" /> {inProgress ? "Logging in..." : "Connect with GitHub"}
         </Button>
       </section>
     );
