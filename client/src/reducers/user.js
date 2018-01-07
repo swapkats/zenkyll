@@ -4,10 +4,16 @@ const user = (state = {}, action) => {
       return action.user;
     case 'LOGOUT':
       return {};
+    case 'UNSET_TOKENS':
+      return {
+        ...state,
+        tokens: false,
+      }
     case 'UPDATE_USER':
       return {
         ...state,
         ...action.data,
+        email: state.email,
       };
     default:
       return state;

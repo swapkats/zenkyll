@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { handleLogin } from '../actions/auth';
 import { Link, withRouter } from 'react-router-dom';
-import { Card, Form, Icon, Input, Button, Checkbox } from 'antd';
+import { Card, Form, Icon, Input, Button } from 'antd';
 const FormItem = Form.Item;
 
 class Login extends Component {
@@ -20,7 +20,6 @@ class Login extends Component {
 
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { email, password } = this.state;
     return (
       <div style={{display: 'flex', 'justifyContent': 'center', 'alignItems': 'center', background: '#fafafa', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}>
         <Card style={{ width: 300 }}>

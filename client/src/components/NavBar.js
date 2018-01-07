@@ -3,7 +3,6 @@ import { Link, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { handleLogout } from '../actions/auth';
 import { Menu, Icon } from 'antd';
-const MenuItemGroup = Menu.ItemGroup;
 
 class NavBar extends Component {
   state = {
@@ -20,6 +19,7 @@ class NavBar extends Component {
     switch(e.key) {
       case 'logout':
         handleLogout(history);
+        break;
       default:
         return;
     }

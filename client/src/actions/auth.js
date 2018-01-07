@@ -80,6 +80,7 @@ export const validateToken = (callBack = () => {}, history) => {
     axios.get('/api/auth/validate_token', headers)
       .then(res => {
         const user = res.data.data;
+        user.tokens = res.data.tokens;
         dispatch(setHeaders(res.headers));
         dispatch(login(user));
         callBack()

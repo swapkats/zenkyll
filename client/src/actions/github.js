@@ -1,38 +1,45 @@
-import React from 'react';
 import axios from 'axios';
-import { setFlash } from '../actions/flash';
-import { setHeaders } from '../actions/headers';
 import API from '../lib/github/API'
-import cookie from '../lib/cookie';
-
 
 const setGithubToken = (token, history) => (dispatch) => {
-  cookie.set('GIT_TOKEN', token);
-  dispatch(fetchUser());
-  history.push('/repos');
+  dispatch(fetchUser(token));
+  axios.post('api/v1/token', { provider: 'github', token })
+  .then(data => {
+    console.log(data);
+  })
 }
 
-const fetchUser = () => dispatch => {
-  const token = cookie.get('GIT_TOKEN');
+const fetchUser = (token) => dispatch => {
   const api = new API({ token });
   api.user().then(data => {
     dispatch({
       type: 'UPDATE_USER',
       data,
     })
-  });
+  }).catch(() => {
+    dispatch({
+      type: 'UNSET_TOKENS'
+    })
+  });;
 }
 
 const fetchRepos = () => (dispatch, getState) => {
-  const token = cookie.get('GIT_TOKEN');
+  const state = getState();
+  const { user: { tokens }} = state;
+
+  const token = tokens[0].token;
   const api = new API({ token });
 
-  dispatch(fetchUser());
+  dispatch(fetchUser(token));
 
   api.fetchRepos().then(data => {
     dispatch({
       type: 'UPDATE_REPOS',
       data,
+    })
+  }).catch(() => {
+    dispatch({
+      type: 'UNSET_TOKENS'
     })
   });
 };

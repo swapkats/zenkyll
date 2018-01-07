@@ -6,7 +6,19 @@ import { fetchRepos } from '../actions/github';
 
 class Repos extends Component {
   componentWillMount() {
+    console.log(this.props.token)
+    if (!this.props.token) {
+      this.props.history.push('/');
+      return;
+    }
     this.props.fetchRepos();
+  }
+
+  componentWillReceiveProps(props) {
+    if (!props.token) {
+      this.props.history.push('/');
+      return;
+    }
   }
 
   render() {
@@ -22,5 +34,6 @@ class Repos extends Component {
 }
 
 export default connect(state => ({
-  repos: state.repos
+  repos: state.repos,
+  token: state.user.tokens && state.user.tokens[0]
 }), { fetchRepos })(withRouter(Repos));

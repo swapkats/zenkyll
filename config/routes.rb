@@ -1,9 +1,13 @@
 Rails.application.routes.draw do
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
-  mount_devise_token_auth_for 'User', at: 'api/auth'
+  mount_devise_token_auth_for 'User', at: 'api/auth', controllers: {
+    token_validations:  'overrides/token_validations'
+  }
   namespace :api do
-    #API ROUTES SHOULD GO HERE
+    namespace :v1 do
+      resource :token, only: [:create]
+    end
   end
 
   get 'auth/callback/github', to: 'api#github_callback'

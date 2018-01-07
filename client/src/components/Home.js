@@ -1,17 +1,15 @@
 import React, { Component } from 'react';
-import { Button } from 'antd';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { setGithubToken } from '../actions/github';
 import Auth from '../lib/github/AuthenticationPage';
 import url from 'url';
-import cookie from '../lib/cookie';
 
 class Home extends Component {
   componentWillMount() {
-    // if (cookie.get('GIT_TOKEN')) {
-    //   this.props.history.push('/repos');
-    // }
+    if (this.props.token) {
+      this.props.history.push('/repos');
+    }
     const parsed = url.parse(window.location.href, true);
     const code = parsed.query && parsed.query.code;
     if (code) {
@@ -30,4 +28,6 @@ class Home extends Component {
   }
 }
 
-export default connect(() => ({}), { setGithubToken })(withRouter(Home));
+export default connect((state) => ({
+  token: state.user.tokens && state.user.tokens[0],
+}), { setGithubToken })(withRouter(Home));

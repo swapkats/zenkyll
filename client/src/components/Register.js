@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { registerUser } from '../actions/auth';
 import { setFlash } from '../actions/flash';
 import { Link, withRouter } from 'react-router-dom';
-import { Card, Form, Icon, Input, Button, Checkbox } from 'antd';
+import { Card, Form, Icon, Input, Button } from 'antd';
 const FormItem = Form.Item;
 
 class Register extends Component {

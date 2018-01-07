@@ -1,7 +1,8 @@
 require 'net/https'
 require 'open-uri'
+require 'pry'
 
-class ApplicationController < ActionController::API
+class ApiController < ActionController::API
   include DeviseTokenAuth::Concerns::SetUserByToken
 
   def github_callback
