@@ -25,6 +25,10 @@ export default class API {
     return this.request("/user/repos");
   }
 
+  fetchBranches(user, repo) {
+    return this.request(`/repos/${user}/${repo}/branches`);
+  }
+
   hasWriteAccess() {
     return this.request(this.repoURL)
       .then(repo => repo.permissions.push)

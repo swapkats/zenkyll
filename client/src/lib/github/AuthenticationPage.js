@@ -18,7 +18,7 @@ export default class AuthenticationPage extends React.Component {
     };
     const auth = new Authenticator(cfg);
 
-    auth.authenticate({ provider: 'github', scope: 'repo' });
+    auth.authenticate({ provider: 'github', scope: this.props.scope });
     // , (err, data) => {
     //   if (err) {
     //     this.setState({ loginError: err.toString() });
@@ -40,7 +40,7 @@ export default class AuthenticationPage extends React.Component {
           disabled={inProgress}
           onClick={this.handleLogin}
         >
-          <Icon type="github" /> {inProgress ? "Logging in..." : "Connect with GitHub"}
+          <Icon type="github" /> {inProgress ? "Logging in..." : "Authorize on GitHub"}
         </Button>
       </section>
     );

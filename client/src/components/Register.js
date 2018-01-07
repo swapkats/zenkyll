@@ -7,8 +7,6 @@ import { Card, Form, Icon, Input, Button } from 'antd';
 const FormItem = Form.Item;
 
 class Register extends Component {
-  state = { email: '', password: '', passwordConfirmation: '' };
-
   handleSubmit = event => {
     event.preventDefault();
     this.props.form.validateFields((err, values) => {
@@ -26,9 +24,8 @@ class Register extends Component {
     const { getFieldDecorator } = this.props.form;
     return (
       <div style={{display: 'flex', 'justifyContent': 'center', 'alignItems': 'center', background: '#fafafa', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}>
-        <Card style={{ width: 300 }}>
+        <Card title="Register" style={{ width: 300 }}>
           <Form onSubmit={this.handleSubmit}>
-            <h1>Register</h1>
             <FormItem>
               {getFieldDecorator('email', {
                 rules: [{ required: true, message: 'Please input your email!' }],
@@ -54,7 +51,7 @@ class Register extends Component {
             <FormItem>
               <Button type="primary" htmlType="submit" style={{width: '100%'}}>Submit</Button>
             </FormItem>
-            Already registered? <Link to="/register">Login</Link>
+            Already registered? <Link to="/login">Login</Link>
           </Form>
         </Card>
       </div>

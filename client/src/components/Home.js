@@ -12,22 +12,26 @@ class Home extends Component {
     if (code) {
       this.props.setGithubToken(code, this.props.history);
     }
-    if (this.props.token) {
-      this.props.history.push('/repos');
+    if (!this.props.sites.length) {
+      this.props.history.push('/connect');
     }
   }
 
 
   render() {
     return (
-      <Auth
-        clientId="2a162c4057c7c5b9e020"
-        base_url="https://github.com/login/oauth/authorize"
-      />
+      <div>
+        <h1>Your jekyll blogs</h1>
+      </div>
+      // <Auth
+      //   clientId="2a162c4057c7c5b9e020"
+      //   base_url="https://github.com/login/oauth/authorize"
+      // />
     );
   }
 }
 
 export default connect((state) => ({
+  sites: state.sites,
   token: state.user.tokens && state.user.tokens[0],
 }), { setGithubToken })(withRouter(Home));

@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
+import NavBar from './NavBar';
 import { List } from 'antd';
 import { fetchRepos } from '../actions/github';
 
 class Repos extends Component {
   componentWillMount() {
-    console.log(this.props.token)
     if (!this.props.token) {
       this.props.history.push('/');
       return;
@@ -24,11 +24,14 @@ class Repos extends Component {
   render() {
     const { repos } = this.props;
     return (
-      <List
-        bordered
-        dataSource={repos}
-        renderItem={item => (<List.Item>{item.name}</List.Item>)}
-      />
+      <div>
+        <NavBar />
+        <List
+          bordered
+          dataSource={repos}
+          renderItem={item => (<List.Item>{item.name}</List.Item>)}
+        />
+      </div>
     );
   }
 }
