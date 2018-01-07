@@ -2,11 +2,11 @@ import axios from 'axios';
 import API from '../lib/github/API'
 
 const setGithubToken = (token, history) => (dispatch) => {
-  dispatch(fetchUser(token));
   axios.post('api/v1/token', { provider: 'github', token })
-  .then(data => {
-    console.log(data);
-  })
+    .then(data => {
+      console.log(data);
+    })
+  dispatch(fetchUser(token));
 }
 
 const fetchUser = (token) => dispatch => {
@@ -27,7 +27,7 @@ const fetchRepos = () => (dispatch, getState) => {
   const state = getState();
   const { user: { tokens }} = state;
 
-  const token = tokens[0].token;
+  const token = tokens[1].token;
   const api = new API({ token });
 
   dispatch(fetchUser(token));

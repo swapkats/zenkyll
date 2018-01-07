@@ -7,13 +7,13 @@ import url from 'url';
 
 class Home extends Component {
   componentWillMount() {
-    if (this.props.token) {
-      this.props.history.push('/repos');
-    }
     const parsed = url.parse(window.location.href, true);
     const code = parsed.query && parsed.query.code;
     if (code) {
       this.props.setGithubToken(code, this.props.history);
+    }
+    if (this.props.token) {
+      this.props.history.push('/repos');
     }
   }
 
