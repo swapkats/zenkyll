@@ -95,6 +95,10 @@ class Repos extends React.Component {
                 <Icon type="upload" />
                 <span>Uploads</span>
               </Menu.Item>
+              <Menu.Item key="5">
+                <Icon type="setting" />
+                <span>Settings</span>
+              </Menu.Item>
           </Menu>
           <Menu
             selectedKeys={[]}
