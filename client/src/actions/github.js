@@ -1,7 +1,6 @@
 import axios from 'axios';
 import API from '../lib/github/API';
 
-
 const fetchUser = token => (dispatch) => {
   const api = new API({ token });
   api.user().then((data) => {
@@ -65,4 +64,18 @@ const setGithubToken = (token, scope) => (dispatch) => {
   dispatch(fetchUser(token));
 };
 
-export { setGithubToken, fetchUser, fetchRepos, fetchBranches };
+const fetchPosts = (repo) => (dispatch, getState) => {
+  const state = getState();
+  const { user: { token: { token } } } = state;
+
+  // token = tokenParam || (!!token && token.token);
+  //
+  // if(!token) { return; }
+  const api = new API({ token, repo: 'swapkats/'+repo });
+  api.listFiles('_posts')
+    .then(data => {
+      console.log(data);
+    })
+};
+
+export { setGithubToken, fetchUser, fetchRepos, fetchBranches, fetchPosts };

@@ -53,7 +53,7 @@ export const handleLogin = (email, password, history) => (dispatch) => {
       const { data: { data: user }, headers } = res;
       dispatch(setHeaders(headers));
       dispatch(login(user));
-      history.push('/');
+      dispatch(validateToken(undefined, history));
     })
     .catch((res) => {
       const messages =

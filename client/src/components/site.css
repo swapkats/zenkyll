@@ -1,0 +1,52 @@
+#components-layout-demo-custom-trigger .trigger {
+  font-size: 18px;
+  line-height: 64px;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: color .3s;
+}
+
+#components-layout-demo-custom-trigger .trigger:hover {
+  color: #1890ff;
+}
+
+.header {
+  background: #fff !important;
+  padding: 0 30px !important;
+}
+
+.sider > div {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+}
+
+.top-menu {
+  flex: 1;
+}
+
+.collapse-menu {
+  flex: 0;
+}
+
+.dropdown-button {
+  background: #fff;
+  display: flex;
+  padding: 20px;
+  cursor: pointer;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dropdown-button:hover {
+  background: #fafafa;
+}
+
+.dropdown-text {
+  flex: 1;
+}
+
+.hidden {
+  visibility: hidden;
+}
