@@ -4,9 +4,9 @@ module Overrides
     def validate_token
       # @resource will have been set by set_user_by_token concern
       if @resource
-        tokens = Token.where(:user => current_user)
+        token = Token.where(:user => current_user).first
         render json: {
-          tokens: tokens,
+          token: token,
           data: @resource.as_json
         }
       else

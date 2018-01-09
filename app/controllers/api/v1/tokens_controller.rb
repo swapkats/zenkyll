@@ -1,7 +1,7 @@
 module Api::V1
   class TokensController < ApiController
     def create
-      @token = Token.where(:user => current_user, :provider => params[:provider], :scope => params[:scope]).first
+      @token = Token.where(:user => current_user, :provider => params[:provider]).first
       @token ||= Token.new({
         provider: params[:provider],
         token: params[:token],
@@ -9,6 +9,7 @@ module Api::V1
         scope: params[:scope]
       })
       @token.token = params[:token]
+      @token.scope = params[:scope]
       @token.save
       # if user_token_exists
       #   # user_token.update({

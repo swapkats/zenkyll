@@ -1,68 +1,68 @@
 import axios from 'axios';
-import API from '../lib/github/API'
+import API from '../lib/github/API';
 
-const setGithubToken = (token, history) => (dispatch) => {
-  axios.post('api/v1/token', { provider: 'github', token })
-    // .then(data => {
-    //   console.log(data);
-    // })
-  dispatch(fetchRepos(token));
-  dispatch(fetchUser(token));
-}
 
-const fetchUser = (token) => dispatch => {
+const fetchUser = token => (dispatch) => {
   const api = new API({ token });
-  api.user().then(data => {
+  api.user().then((data) => {
     dispatch({
       type: 'UPDATE_USER',
       data,
-    })
+    });
   }).catch(() => {
-    dispatch({
-      type: 'UNSET_TOKENS'
-    })
-  });;
-}
+    // dispatch({
+    //   type: 'UNSET_TOKENS',
+    // });
+  });
+};
 
-const fetchRepos = (tokenParam) => (dispatch, getState) => {
+const fetchRepos = tokenParam => (dispatch, getState) => {
   const state = getState();
-  const { user: { tokens }} = state;
+  let { user: { token } } = state;
 
-  const token = tokenParam || tokens[tokens.length-1].token;
+  token = tokenParam || (!!token && token.token);
+
+  if(!token) { return; }
   const api = new API({ token });
 
   dispatch(fetchUser(token));
-
-  api.fetchRepos().then(data => {
+  api.fetchRepos('/user/repos?type=all&sort=updated').then((data) => {
     dispatch({
       type: 'UPDATE_REPOS',
       data,
-    })
+    });
   }).catch(() => {
-    dispatch({
-      type: 'UNSET_TOKENS'
-    })
+    // dispatch({
+    //   type: 'UNSET_TOKENS',
+    // });
   });
 };
 
 
-const fetchBranches = (branch) => (dispatch, getState) => {
+const fetchBranches = (token, branch) => (dispatch, getState) => {
   const state = getState();
-  const { user: { login, tokens }} = state;
-
-  const token = tokens[tokens.length-1].token;
+  const { user: { login } } = state;
   const api = new API({ token });
 
-  api.fetchBranches(login, branch).then(data => {
+  api.fetchBranches(login, branch).then((data) => {
     dispatch({
       type: 'UPDATE_BRANCHES',
       data,
-    })
+    });
   }).catch(() => {
-    dispatch({
-      type: 'UNSET_TOKENS'
-    })
+    // dispatch({
+    //   type: 'UNSET_TOKENS',
+    // });
   });
 };
 
-export { setGithubToken, fetchRepos, fetchBranches };
+const setGithubToken = (token, scope) => (dispatch) => {
+  axios.post('api/v1/token', { provider: 'github', token, scope });
+  // .then(data => {
+  //   console.log(data);
+  // })
+  dispatch(fetchRepos(token));
+  dispatch(fetchUser(token));
+};
+
+export { setGithubToken, fetchUser, fetchRepos, fetchBranches };

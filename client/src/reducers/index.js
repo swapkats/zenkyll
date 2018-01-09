@@ -10,7 +10,7 @@ const rootReducer = combineReducers({
   flash,
   repos,
   sites,
-  branches
+  branches,
 });
 
 export default rootReducer;

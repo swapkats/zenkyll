@@ -21,8 +21,8 @@ export default class API {
     return this.request("/user");
   }
 
-  fetchRepos() {
-    return this.request("/user/repos");
+  fetchRepos(url) {
+    return this.request(url || "/user/repos");
   }
 
   fetchBranches(user, repo) {
