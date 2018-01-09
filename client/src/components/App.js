@@ -5,7 +5,7 @@ import Register from './Register';
 import Flash from './Flash';
 import Home from './Home';
 import Connect from './Connect';
-import Repos from './Repos';
+import Site from './Site';
 import ProtectedRoute from './ProtectedRoute';
 import AuthRoute from './AuthRoute';
 import FetchUser from './FetchUser';
@@ -19,9 +19,9 @@ class App extends Component {
         <FetchUser>
           <Switch>
             <ProtectedRoute exact path='/' component={Connect} />
-            <ProtectedRoute exact path='/repos' component={Repos} />
             <AuthRoute exact path='/login' component={Login} />
             <AuthRoute exact path='/register' component={Register} />
+            <ProtectedRoute exact path='/site/:site' component={Site} />
             <Route component={NoMatch} />
           </Switch>
         </FetchUser>

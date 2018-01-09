@@ -12,9 +12,6 @@ class Home extends Component {
     if (code) {
       this.props.setGithubToken(code, this.props.history);
     }
-    if (!this.props.sites.length) {
-      this.props.history.push('/connect');
-    }
   }
 
 

@@ -72,8 +72,15 @@ export const validateToken = (callBack = () => {}, history) => (dispatch) => {
     .then((res) => {
       const user = res.data.data;
       user.token = res.data.token;
+      user.sites = res.data.sites;
       dispatch(setHeaders(res.headers));
       dispatch(login(user));
+      const isIndexPage = history.location.pathname == '/';
+      if (isIndexPage && !user.sites.length) {
+        history.push('/connect');
+      } else if (isIndexPage && !!user.sites.length) {
+        history.push('/site/' + user.sites[0].repo)
+      }
       callBack();
     })
     .catch(() => {

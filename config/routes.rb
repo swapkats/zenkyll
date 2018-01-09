@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resource :token, only: [:create]
+      resource :site, only: [:create]
     end
   end
 

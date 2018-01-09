@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import url from 'url';
+import { createSite } from '../actions/site';
 import { setGithubToken, fetchBranches, fetchRepos } from '../actions/github';
 import { Card, Form, Icon, Input, Button, Radio, AutoComplete, Spin } from 'antd';
 import Auth from '../lib/github/AuthenticationPage';
@@ -30,7 +31,7 @@ class Connect extends Component {
     this.props.form.validateFields((err, values) => {
       if (!err) {
         // console.log('Received values of form: ', values);
-        this.props.handleConnect(values.email, values.password, this.props.history);
+        this.props.createSite(values.name, values.repo, values.branch, values.scope, this.props.history);
       }
     });
   }
@@ -124,4 +125,4 @@ const mapStateToProps = state => {
     branches: state.branches.map(repo => repo.name)
   };
 }
-export default connect(mapStateToProps, { handleConnect: () => {}, setGithubToken, fetchRepos, fetchBranches })(Form.create()(withRouter(Connect)));
+export default connect(mapStateToProps, { createSite, setGithubToken, fetchRepos, fetchBranches })(Form.create()(withRouter(Connect)));
