@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
-import { Menu, Icon, Button, Layout, Dropdown } from 'antd';
+import moment from 'moment';
+import { Menu, Icon, Button, List, Layout, Dropdown, Card } from 'antd';
 import './site.css';
 import { fetchPosts } from '../actions/github';
 
 const SubMenu = Menu.SubMenu;
 const { Sider, Content, Header } = Layout;
 
-class Repos extends Component {
+class Repos extends React.Component {
   state = {
     collapsed: false,
   }
@@ -52,7 +53,8 @@ class Repos extends Component {
   );
 
   render() {
-    const { route } = this.props;
+    const { route, posts } = this.props;
+    console.log(posts)
     const { collapsed } = this.state;
     return (
       <Layout style={{height: '100%'}}>
@@ -109,7 +111,23 @@ class Repos extends Component {
         </Sider>
         <Layout>
           <Content>
-
+            <Card className="post-list-card">
+              <List
+                className="post-list"
+                // Add Loading
+                itemLayout="horizontal"
+                dataSource={posts}
+                renderItem={item => (
+                  <List.Item actions={[<a>{item.meta.published ? 'unpublish' : 'publish'}</a>, <a>edit</a>]}>
+                    <List.Item.Meta
+                      style={{flex: 1}}
+                      title={<a href={item.file.name}>{item.meta.title}</a>}
+                      description={moment(item.meta.date).format('LLLL')}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
           </Content>
         </Layout>
       </Layout>
@@ -119,4 +137,5 @@ class Repos extends Component {
 
 export default connect(state => ({
   sites: state.user.sites,
+  posts: state.collections.posts,
 }), { fetchPosts })(withRouter(Repos));

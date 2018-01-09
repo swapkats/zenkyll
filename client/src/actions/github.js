@@ -21,7 +21,7 @@ const fetchRepos = tokenParam => (dispatch, getState) => {
 
   token = tokenParam || (!!token && token.token);
 
-  if(!token) { return; }
+  if (!token) { return; }
   const api = new API({ token });
 
   dispatch(fetchUser(token));
@@ -72,9 +72,13 @@ const fetchPosts = (repo) => (dispatch, getState) => {
   //
   // if(!token) { return; }
   const api = new API({ token, repo: 'swapkats/'+repo });
-  api.listFiles('_posts')
+  api.getEntriesByFolder('_posts')
     .then(data => {
-      console.log(data);
+      dispatch({
+        type: 'UPDATE_COLLECTIONS_POSTS',
+        key: 'posts',
+        data,
+      })
     })
 };
 

@@ -1,28 +1,38 @@
-import LocalForage from "localforage";
-import { Base64 } from "js-base64";
-import { uniq, initial, last, get, find } from "lodash";
-import { filterPromises, resolvePromiseProperties } from "../promiseHelper";
+import LocalForage from 'localforage';
+import { Base64 } from 'js-base64';
+import { uniq, initial, last, get, find } from 'lodash';
+import { filterPromises, resolvePromiseProperties } from '../promiseHelper';
+import semaphore from 'semaphore';
+import jsyaml from 'js-yaml';
 // import AssetProxy from "../valueObjects/AssetProxy";
 // import { SIMPLE, EDITORIAL_WORKFLOW, status } from "Constants/publishModes";
-import { APIError } from "../valueObjects/errors";
+import { APIError } from '../valueObjects/errors';
+import { fileExtension } from '../pathHelper';
 
-const CMS_BRANCH_PREFIX = 'cms/';
+const CMS_BRANCH_PREFIX = 'jekyll_press/';
+const MAX_CONCURRENT_DOWNLOADS = 10;
 
 export default class API {
   constructor(config) {
-    this.api_root = config.api_root || "https://api.github.com";
+    this.api_root = config.api_root || 'https://api.github.com';
     this.token = config.token || false;
-    this.branch = config.branch || "master";
-    this.repo = config.repo || "";
-    this.repoURL = `/repos/${ this.repo }`;
+    this.branch = config.branch || 'master';
+    this.repo = config.repo || '';
+    this.repoURL = `/repos/${this.repo}`;
+  }
+
+  getEntriesByFolder(folder, extension = 'md') {
+    return this.listFiles(folder)
+      .then(files => files.filter(file => fileExtension(file.name) === extension))
+      .then((files) => this.fetchFiles(this, files));
   }
 
   user() {
-    return this.request("/user");
+    return this.request('/user');
   }
 
   fetchRepos(url) {
-    return this.request(url || "/user/repos");
+    return this.request(url || '/user/repos');
   }
 
   fetchBranches(user, repo) {
@@ -32,20 +42,20 @@ export default class API {
   hasWriteAccess() {
     return this.request(this.repoURL)
       .then(repo => repo.permissions.push)
-      .catch(error => {
-        console.error("Problem fetching repo data from GitHub");
+      .catch((error) => {
+        console.error('Problem fetching repo data from GitHub');
         throw error;
       });
   }
 
   requestHeaders(headers = {}) {
     const baseHeader = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...headers,
     };
 
     if (this.token) {
-      baseHeader.Authorization = `token ${ this.token }`;
+      baseHeader.Authorization = `token ${this.token}`;
       return baseHeader;
     }
 
@@ -67,11 +77,11 @@ export default class API {
     const params = [`ts=${cacheBuster}`];
     if (options.params) {
       for (const key in options.params) {
-        params.push(`${ key }=${ encodeURIComponent(options.params[key]) }`);
+        params.push(`${key}=${encodeURIComponent(options.params[key])}`);
       }
     }
     if (params.length) {
-      path += `?${ params.join("&") }`;
+      path += `?${params.join('&')}`;
     }
     return this.api_root + path;
   }
@@ -82,15 +92,15 @@ export default class API {
     let responseStatus;
     return fetch(url, { ...options, headers }).then((response) => {
       responseStatus = response.status;
-      const contentType = response.headers.get("Content-Type");
+      const contentType = response.headers.get('Content-Type');
       if (contentType && contentType.match(/json/)) {
         return this.parseJsonResponse(response);
       }
       return response.text();
     })
-    .catch((error) => {
-      throw new APIError(error.message, responseStatus, 'GitHub');
-    });
+      .catch((error) => {
+        throw new APIError(error.message, responseStatus, 'GitHub');
+      });
   }
 
   generateBranchName(basename) {
@@ -98,95 +108,156 @@ export default class API {
   }
 
   checkMetadataRef() {
-    return this.request(`${ this.repoURL }/git/refs/meta/_netlify_cms?${ Date.now() }`, {
-      cache: "no-store",
+    return this.request(`${this.repoURL}/git/refs/meta/jekyll_press?${Date.now()}`, {
+      cache: 'no-store',
     })
-    .then(response => response.object)
-    .catch((error) => {
+      .then(response => response.object)
+      .catch((error) => {
       // Meta ref doesn't exist
-      const readme = {
-        raw: "# Netlify CMS\n\nThis tree is used by the Netlify CMS to store metadata information for specific files and branches.",
-      };
+        const readme = {
+          raw: '# Netlify CMS\n\nThis tree is used by the Netlify CMS to store metadata information for specific files and branches.',
+        };
 
-      return this.uploadBlob(readme)
-      .then(item => this.request(`${ this.repoURL }/git/trees`, {
-        method: "POST",
-        body: JSON.stringify({ tree: [{ path: "README.md", mode: "100644", type: "blob", sha: item.sha }] }),
-      }))
-      .then(tree => this.commit("First Commit", tree))
-      .then(response => this.createRef("meta", "_netlify_cms", response.sha))
-      .then(response => response.object);
-    });
+        return this.uploadBlob(readme)
+          .then(item => this.request(`${this.repoURL}/git/trees`, {
+            method: 'POST',
+            body: JSON.stringify({
+              tree: [{
+                path: 'README.md', mode: '100644', type: 'blob', sha: item.sha,
+              }],
+            }),
+          }))
+          .then(tree => this.commit('First Commit', tree))
+          .then(response => this.createRef('meta', 'jekyll_press', response.sha))
+          .then(response => response.object);
+      });
   }
 
   storeMetadata(key, data) {
     return this.checkMetadataRef()
-    .then((branchData) => {
-      const fileTree = {
-        [`${ key }.json`]: {
-          path: `${ key }.json`,
-          raw: JSON.stringify(data),
-          file: true,
-        },
-      };
+      .then((branchData) => {
+        const fileTree = {
+          [`${key}.json`]: {
+            path: `${key}.json`,
+            raw: JSON.stringify(data),
+            file: true,
+          },
+        };
 
-      return this.uploadBlob(fileTree[`${ key }.json`])
-      .then(item => this.updateTree(branchData.sha, "/", fileTree))
-      .then(changeTree => this.commit(`Updating “${ key }” metadata`, changeTree))
-      .then(response => this.patchRef("meta", "_netlify_cms", response.sha))
-      .then(() => {
-        LocalForage.setItem(`gh.meta.${ key }`, {
-          expires: Date.now() + 300000, // In 5 minutes
-          data,
-        });
+        return this.uploadBlob(fileTree[`${key}.json`])
+          .then(item => this.updateTree(branchData.sha, '/', fileTree))
+          .then(changeTree => this.commit(`Updating “${key}” metadata`, changeTree))
+          .then(response => this.patchRef('meta', '_', response.sha))
+          .then(() => {
+            LocalForage.setItem(`gh.meta.${key}`, {
+              expires: Date.now() + 300000, // In 5 minutes
+              data,
+            });
+          });
       });
-    });
   }
 
   retrieveMetadata(key) {
-    const cache = LocalForage.getItem(`gh.meta.${ key }`);
+    const cache = LocalForage.getItem(`gh.meta.${key}`);
     return cache.then((cached) => {
       if (cached && cached.expires > Date.now()) { return cached.data; }
       console.log("%c Checking for MetaData files", "line-height: 30px;text-align: center;font-weight: bold"); // eslint-disable-line
-      return this.request(`${ this.repoURL }/contents/${ key }.json`, {
-        params: { ref: "refs/meta/_netlify_cms" },
-        headers: { Accept: "application/vnd.github.VERSION.raw" },
-        cache: "no-store",
+      return this.request(`${this.repoURL}/contents/${key}.json`, {
+        params: { ref: 'refs/meta/jekyll_press' },
+        headers: { Accept: 'application/vnd.github.VERSION.raw' },
+        cache: 'no-store',
       })
-      .then(response => JSON.parse(response))
+        .then(response => JSON.parse(response))
       .catch(error => console.log("%c %s does not have metadata", "line-height: 30px;text-align: center;font-weight: bold", key)); // eslint-disable-line
     });
   }
 
   readFile(path, sha, branch = this.branch) {
-    const cache = sha ? LocalForage.getItem(`gh.${ sha }`) : Promise.resolve(null);
+    const cache = sha ? LocalForage.getItem(`gh.${sha}`) : Promise.resolve(null);
     return cache.then((cached) => {
       if (cached) { return cached; }
 
-      return this.request(`${ this.repoURL }/contents/${ path }`, {
-        headers: { Accept: "application/vnd.github.VERSION.raw" },
+      return this.request(`${this.repoURL}/contents/${path}`, {
+        headers: { Accept: 'application/vnd.github.VERSION.raw' },
         params: { ref: branch },
-        cache: "no-store",
+        cache: 'no-store',
       }).then((result) => {
         if (sha) {
-          LocalForage.setItem(`gh.${ sha }`, result);
+          LocalForage.setItem(`gh.${sha}`, result);
         }
         return result;
       });
     });
   }
 
+  parseMetaData(resp, options) {
+    // Extract YAML from a post, trims whitespace
+    resp = resp
+      .replace(/\r\n/g, '\n') // normalize a little bit
+      .replace(/\s*$/, '\n'); // trim (or append) so that EOF has exactly one \n
+
+    // var hasMetadata = !!util.hasMetadata(resp);
+    //
+    // if (!hasMetadata) return {
+    //   content: resp,
+    //   metadata: false,
+    //   previous: resp
+    // };
+
+    var res = {
+      previous: resp
+    };
+
+    res.content = resp.replace(/^(---\n)((.|\n)*?)---\n?/, function(match, dashes, frontmatter) {
+      var regex = /published: false/;
+
+      try {
+        // TODO: _.defaults for each key
+        res.metadata = jsyaml.safeLoad(frontmatter);
+
+        // Default to published unless explicitly set to false
+        res.metadata.published = !regex.test(frontmatter);
+      } catch(err) {
+        console.log('ERROR encoding YAML');
+        console.log(err);
+      }
+
+      return '';
+    });
+
+    return res;
+
+  }
+
+  fetchFiles(self, files) {
+    const sem = semaphore(MAX_CONCURRENT_DOWNLOADS);
+    const promises = [];
+    files.forEach((file) => {
+      promises.push(new Promise((resolve, reject) => (
+        sem.take(() => self.readFile(file.path, file.sha).then((res) => {
+          const data = self.parseMetaData(res);
+          resolve({ file, meta: data.metadata, content: data.content });
+          sem.leave();
+        }).catch((err) => {
+          sem.leave();
+          reject(err);
+        }))
+      )));
+    });
+    return Promise.all(promises);
+  }
+
   listFiles(path) {
-    return this.request(`${ this.repoURL }/contents/${ path.replace(/\/$/, '') }`, {
+    return this.request(`${this.repoURL}/contents/${path.replace(/\/$/, '')}`, {
       params: { ref: this.branch },
     })
-    .then(files => {
-      if (!Array.isArray(files)) {
-        throw new Error(`Cannot list files, path ${path} is not a directory but a ${files.type}`);
-      }
-      return files;
-    })
-    .then(files => files.filter(file => file.type === "file"));
+      .then((files) => {
+        if (!Array.isArray(files)) {
+          throw new Error(`Cannot list files, path ${path} is not a directory but a ${files.type}`);
+        }
+        return files;
+      })
+      .then(files => files.filter(file => file.type === 'file'));
   }
 
   readUnpublishedBranchFile(contentKey) {
@@ -194,48 +265,46 @@ export default class API {
       .then(data => (data.objects.entry.path ? data : Promise.reject(null)));
     return resolvePromiseProperties({
       metaData: metaDataPromise,
-      fileData: metaDataPromise.then(
-        data => this.readFile(data.objects.entry.path, null, data.branch)),
-      isModification: metaDataPromise.then(
-        data => this.isUnpublishedEntryModification(data.objects.entry.path, this.branch)),
+      fileData: metaDataPromise.then(data => this.readFile(data.objects.entry.path, null, data.branch)),
+      isModification: metaDataPromise.then(data => this.isUnpublishedEntryModification(data.objects.entry.path, this.branch)),
     })
-    .catch(() => {
+      .catch(() => {
       // throw new EditorialWorkflowError('content is not under editorial workflow', true);
-    });
+      });
   }
 
   isUnpublishedEntryModification(path, branch) {
     return this.readFile(path, null, branch)
-    .then(data => true)
-    .catch((err) => {
-      if (err.message && err.message === "Not Found") {
-        return false;
-      }
-      throw err;
-    });
+      .then(data => true)
+      .catch((err) => {
+        if (err.message && err.message === 'Not Found') {
+          return false;
+        }
+        throw err;
+      });
   }
 
   listUnpublishedBranches() {
     console.log("%c Checking for Unpublished entries", "line-height: 30px;text-align: center;font-weight: bold"); // eslint-disable-line
-    return this.request(`${ this.repoURL }/git/refs/heads/cms`)
-    .then(branches => filterPromises(branches, (branch) => {
-      const branchName = branch.ref.substring("/refs/heads/".length - 1);
+    return this.request(`${this.repoURL}/git/refs/heads/cms`)
+      .then(branches => filterPromises(branches, (branch) => {
+        const branchName = branch.ref.substring('/refs/heads/'.length - 1);
 
-      // Get PRs with a `head` of `branchName`. Note that this is a
-      // substring match, so we need to check that the `head.ref` of
-      // at least one of the returned objects matches `branchName`.
-      return this.request(`${ this.repoURL }/pulls`, {
-        params: {
-          head: branchName,
-          state: 'open',
-        },
-      })
-        .then(prs => prs.some(pr => pr.head.ref === branchName));
-    }))
-    .catch((error) => {
+        // Get PRs with a `head` of `branchName`. Note that this is a
+        // substring match, so we need to check that the `head.ref` of
+        // at least one of the returned objects matches `branchName`.
+        return this.request(`${this.repoURL}/pulls`, {
+          params: {
+            head: branchName,
+            state: 'open',
+          },
+        })
+          .then(prs => prs.some(pr => pr.head.ref === branchName));
+      }))
+      .catch((error) => {
       console.log("%c No Unpublished entries", "line-height: 30px;text-align: center;font-weight: bold"); // eslint-disable-line
-      throw error;
-    });
+        throw error;
+      });
   }
 
   composeFileTree(files) {
@@ -247,7 +316,7 @@ export default class API {
 
     files.forEach((file) => {
       if (file.uploaded) { return; }
-      parts = file.path.split("/").filter(part => part);
+      parts = file.path.split('/').filter(part => part);
       filename = parts.pop();
       subtree = fileTree;
       while (part = parts.shift()) {
@@ -272,28 +341,28 @@ export default class API {
 
     const fileTree = this.composeFileTree(files);
 
-    return Promise.all(uploadPromises).then(() => {
+    return Promise.all(uploadPromises).then(() =>
       // if (!options.mode || (options.mode && options.mode === SIMPLE)) {
-      return this.getBranch()
-        .then(branchData => this.updateTree(branchData.commit.sha, "/", fileTree))
+      this.getBranch()
+        .then(branchData => this.updateTree(branchData.commit.sha, '/', fileTree))
         .then(changeTree => this.commit(options.commitMessage, changeTree))
-        .then(response => this.patchBranch(this.branch, response.sha));
+        .then(response => this.patchBranch(this.branch, response.sha)),
 
       // } else if (options.mode && options.mode === EDITORIAL_WORKFLOW) {
       //   const mediaFilesList = mediaFiles.map(file => ({ path: file.path, sha: file.sha }));
       //   return this.editorialWorkflowGit(fileTree, entry, mediaFilesList, options);
       // }
-    });
+    );
   }
 
-  deleteFile(path, message, options={}) {
+  deleteFile(path, message, options = {}) {
     const branch = options.branch || this.branch;
     const pathArray = path.split('/');
     const filename = last(pathArray);
     const directory = initial(pathArray).join('/');
     const fileDataPath = encodeURIComponent(directory);
     const fileDataURL = `${this.repoURL}/git/trees/${branch}:${fileDataPath}`;
-    const fileURL = `${ this.repoURL }/contents/${ path }`;
+    const fileURL = `${this.repoURL}/contents/${path}`;
 
     /**
      * We need to request the tree first to get the SHA. We use extended SHA-1
@@ -301,91 +370,11 @@ export default class API {
      * through the tree.
      */
     return this.request(fileDataURL, { cache: 'no-store' })
-      .then(resp => {
+      .then((resp) => {
         const { sha } = resp.tree.find(file => file.path === filename);
         const opts = { method: 'DELETE', params: { sha, message, branch } };
         return this.request(fileURL, opts);
       });
-  }
-
-  editorialWorkflowGit(fileTree, entry, filesList, options) {
-    const contentKey = entry.slug;
-    const branchName = this.generateBranchName(contentKey);
-    const unpublished = options.unpublished || false;
-    if (!unpublished) {
-      // Open new editorial review workflow for this entry - Create new metadata and commit to new branch`
-      let prResponse;
-
-      return this.getBranch()
-      .then(branchData => this.updateTree(branchData.commit.sha, "/", fileTree))
-      .then(changeTree => this.commit(options.commitMessage, changeTree))
-      .then(commitResponse => this.createBranch(branchName, commitResponse.sha))
-      .then(branchResponse => this.createPR(options.commitMessage, branchName))
-      .then(pr => {
-        prResponse = pr;
-        return this.user();
-      })
-      .then(user => {
-        return this.storeMetadata(contentKey, {
-          type: "PR",
-          pr: {
-            number: prResponse.number,
-            head: prResponse.head && prResponse.head.sha,
-          },
-          user: user.name || user.login,
-          // status: status.first(),
-          branch: branchName,
-          collection: options.collectionName,
-          title: options.parsedData && options.parsedData.title,
-          description: options.parsedData && options.parsedData.description,
-          objects: {
-            entry: {
-              path: entry.path,
-              sha: entry.sha,
-            },
-            files: filesList,
-          },
-          timeStamp: new Date().toISOString(),
-        });
-      });
-    } else {
-      // Entry is already on editorial review workflow - just update metadata and commit to existing branch
-      let newHead;
-      return this.getBranch(branchName)
-        .then(branchData => this.updateTree(branchData.commit.sha, "/", fileTree))
-        .then(changeTree => this.commit(options.commitMessage, changeTree))
-        .then(commit => {
-          newHead = commit;
-          return this.retrieveMetadata(contentKey);
-        })
-        .then(metadata => {
-          const { title, description } = options.parsedData || {};
-          const metadataFiles = get(metadata.objects, 'files', []);
-          const files = [ ...metadataFiles, ...filesList ];
-          const pr = { ...metadata.pr, head: newHead.sha };
-          const objects = {
-            entry: { path: entry.path, sha: entry.sha },
-            files: uniq(files),
-          };
-          const updatedMetadata = { ...metadata, pr, title, description, objects };
-
-          /**
-           * If an asset store is in use, assets are always accessible, so we
-           * can just finish the persist operation here.
-           */
-          if (options.hasAssetStore) {
-            return this.storeMetadata(contentKey, updatedMetadata)
-              .then(() => this.patchBranch(branchName, newHead.sha));
-          }
-
-          /**
-           * If no asset store is in use, assets are being stored in the content
-           * repo, which means pull requests opened for editorial workflow
-           * entries must be rebased if assets have been added or removed.
-           */
-          return this.rebasePullRequest(pr.number, branchName, contentKey, metadata, newHead);
-        });
-    }
   }
 
   /**
@@ -422,8 +411,7 @@ export default class API {
       const updatedMetadata = { ...metadata, pr, timeStamp };
       await this.storeMetadata(contentKey, updatedMetadata);
       return this.patchBranch(branchName, rebasedHead.sha, { force: true });
-    }
-    catch(error) {
+    } catch (error) {
       console.error(error);
       throw error;
     }
@@ -448,17 +436,15 @@ export default class API {
      * changing only the parent SHA and tree for each, but retaining all other
      * info, such as the author/committer data.
      */
-    const newHeadPromise = commits.reduce((lastCommitPromise, commit, idx) => {
-      return lastCommitPromise.then(newParent => {
-        /**
+    const newHeadPromise = commits.reduce((lastCommitPromise, commit, idx) => lastCommitPromise.then((newParent) => {
+      /**
          * Normalize commit data to ensure it's not nested in `commit.commit`.
          */
-        const parent = this.normalizeCommit(newParent);
-        const commitToRebase = this.normalizeCommit(commit);
+      const parent = this.normalizeCommit(newParent);
+      const commitToRebase = this.normalizeCommit(commit);
 
-        return this.rebaseSingleBlobCommit(parent, commitToRebase, pathToBlob);
-      });
-    }, Promise.resolve(baseCommit));
+      return this.rebaseSingleBlobCommit(parent, commitToRebase, pathToBlob);
+    }), Promise.resolve(baseCommit));
 
     /**
      * Return a promise that resolves when all commits have been created.
@@ -478,7 +464,7 @@ export default class API {
     /**
      * Set the base commit as the parent.
      */
-    const parent = [ baseCommit.sha ];
+    const parent = [baseCommit.sha];
 
     /**
      * Get the blob data by path.
@@ -503,14 +489,14 @@ export default class API {
    * Get a pull request by PR number.
    */
   getPullRequest(prNumber) {
-    return this.request(`${ this.repoURL }/pulls/${prNumber} }`);
+    return this.request(`${this.repoURL}/pulls/${prNumber} }`);
   }
 
   /**
    * Get the list of commits for a given pull request.
    */
-  getPullRequestCommits (prNumber) {
-    return this.request(`${ this.repoURL }/pulls/${prNumber}/commits`);
+  getPullRequestCommits(prNumber) {
+    return this.request(`${this.repoURL}/pulls/${prNumber}/commits`);
   }
 
   /**
@@ -534,28 +520,28 @@ export default class API {
   updateUnpublishedEntryStatus(collection, slug, status) {
     const contentKey = slug;
     return this.retrieveMetadata(contentKey)
-    .then(metadata => ({
-      ...metadata,
-      status,
-    }))
-    .then(updatedMetadata => this.storeMetadata(contentKey, updatedMetadata));
+      .then(metadata => ({
+        ...metadata,
+        status,
+      }))
+      .then(updatedMetadata => this.storeMetadata(contentKey, updatedMetadata));
   }
 
   deleteUnpublishedEntry(collection, slug) {
     const contentKey = slug;
     const branchName = this.generateBranchName(contentKey);
     return this.retrieveMetadata(contentKey)
-    .then(metadata => this.closePR(metadata.pr, metadata.objects))
-    .then(() => this.deleteBranch(branchName))
+      .then(metadata => this.closePR(metadata.pr, metadata.objects))
+      .then(() => this.deleteBranch(branchName))
     // If the PR doesn't exist, then this has already been deleted -
     // deletion should be idempotent, so we can consider this a
     // success.
-    .catch((err) => {
-      if (err.message === "Reference does not exist") {
-        return Promise.resolve();
-      }
-      return Promise.reject(err);
-    });
+      .catch((err) => {
+        if (err.message === 'Reference does not exist') {
+          return Promise.resolve();
+        }
+        return Promise.reject(err);
+      });
   }
 
   publishUnpublishedEntry(collection, slug) {
@@ -563,38 +549,38 @@ export default class API {
     const branchName = this.generateBranchName(contentKey);
     let prNumber;
     return this.retrieveMetadata(contentKey)
-    .then(metadata => this.mergePR(metadata.pr, metadata.objects))
-    .then(() => this.deleteBranch(branchName));
+      .then(metadata => this.mergePR(metadata.pr, metadata.objects))
+      .then(() => this.deleteBranch(branchName));
   }
 
 
   createRef(type, name, sha) {
-    return this.request(`${ this.repoURL }/git/refs`, {
-      method: "POST",
-      body: JSON.stringify({ ref: `refs/${ type }/${ name }`, sha }),
+    return this.request(`${this.repoURL}/git/refs`, {
+      method: 'POST',
+      body: JSON.stringify({ ref: `refs/${type}/${name}`, sha }),
     });
   }
 
   patchRef(type, name, sha, opts = {}) {
     const force = opts.force || false;
-    return this.request(`${ this.repoURL }/git/refs/${ type }/${ encodeURIComponent(name) }`, {
-      method: "PATCH",
+    return this.request(`${this.repoURL}/git/refs/${type}/${encodeURIComponent(name)}`, {
+      method: 'PATCH',
       body: JSON.stringify({ sha, force }),
     });
   }
 
   deleteRef(type, name, sha) {
-    return this.request(`${ this.repoURL }/git/refs/${ type }/${ encodeURIComponent(name) }`, {
+    return this.request(`${this.repoURL}/git/refs/${type}/${encodeURIComponent(name)}`, {
       method: 'DELETE',
     });
   }
 
   getBranch(branch = this.branch) {
-    return this.request(`${ this.repoURL }/branches/${ encodeURIComponent(branch) }`);
+    return this.request(`${this.repoURL}/branches/${encodeURIComponent(branch)}`);
   }
 
   createBranch(branchName, sha) {
-    return this.createRef("heads", branchName, sha);
+    return this.createRef('heads', branchName, sha);
   }
 
   assertCmsBranch(branchName) {
@@ -606,18 +592,20 @@ export default class API {
     if (force && !this.assertCmsBranch(branchName)) {
       throw Error(`Only CMS branches can be force updated, cannot force update ${branchName}`);
     }
-    return this.patchRef("heads", branchName, sha, { force });
+    return this.patchRef('heads', branchName, sha, { force });
   }
 
   deleteBranch(branchName) {
-    return this.deleteRef("heads", branchName);
+    return this.deleteRef('heads', branchName);
   }
 
   createPR(title, head, base = this.branch) {
-    const body = "Automatically generated by Netlify CMS";
-    return this.request(`${ this.repoURL }/pulls`, {
-      method: "POST",
-      body: JSON.stringify({ title, body, head, base }),
+    const body = 'Automatically generated by Netlify CMS';
+    return this.request(`${this.repoURL}/pulls`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title, body, head, base,
+      }),
     });
   }
 
@@ -625,8 +613,8 @@ export default class API {
     const headSha = pullrequest.head;
     const prNumber = pullrequest.number;
     console.log("%c Deleting PR", "line-height: 30px;text-align: center;font-weight: bold"); // eslint-disable-line
-    return this.request(`${ this.repoURL }/pulls/${ prNumber }`, {
-      method: "PATCH",
+    return this.request(`${this.repoURL}/pulls/${prNumber}`, {
+      method: 'PATCH',
       body: JSON.stringify({
         state: 'closed',
       }),
@@ -637,34 +625,34 @@ export default class API {
     const headSha = pullrequest.head;
     const prNumber = pullrequest.number;
     console.log("%c Merging PR", "line-height: 30px;text-align: center;font-weight: bold"); // eslint-disable-line
-    return this.request(`${ this.repoURL }/pulls/${ prNumber }/merge`, {
-      method: "PUT",
+    return this.request(`${this.repoURL}/pulls/${prNumber}/merge`, {
+      method: 'PUT',
       body: JSON.stringify({
-        commit_message: "Automatically generated. Merged on Netlify CMS.",
+        commit_message: 'Automatically generated. Merged on Netlify CMS.',
         sha: headSha,
       }),
     })
-    .catch((error) => {
-      if (error instanceof APIError && error.status === 405) {
-        this.forceMergePR(pullrequest, objects);
-      } else {
-        throw error;
-      }
-    });
+      .catch((error) => {
+        if (error instanceof APIError && error.status === 405) {
+          this.forceMergePR(pullrequest, objects);
+        } else {
+          throw error;
+        }
+      });
   }
 
   forceMergePR(pullrequest, objects) {
     const files = objects.files.concat(objects.entry);
     const fileTree = this.composeFileTree(files);
-    let commitMessage = "Automatically generated. Merged on Netlify CMS\n\nForce merge of:";
+    let commitMessage = 'Automatically generated. Merged on Netlify CMS\n\nForce merge of:';
     files.forEach((file) => {
-      commitMessage += `\n* "${ file.path }"`;
+      commitMessage += `\n* "${file.path}"`;
     });
     console.log("%c Automatic merge not possible - Forcing merge.", "line-height: 30px;text-align: center;font-weight: bold"); // eslint-disable-line
     return this.getBranch()
-    .then(branchData => this.updateTree(branchData.commit.sha, "/", fileTree))
-    .then(changeTree => this.commit(commitMessage, changeTree))
-    .then(response => this.patchBranch(this.branch, response.sha));
+      .then(branchData => this.updateTree(branchData.commit.sha, '/', fileTree))
+      .then(changeTree => this.commit(commitMessage, changeTree))
+      .then(response => this.patchBranch(this.branch, response.sha));
   }
 
   getTree(sha) {
@@ -683,29 +671,25 @@ export default class API {
     const directories = pathSegments.slice(0, -1);
     const filename = pathSegments.slice(-1)[0];
     const baseTree = this.getTree(treeSha);
-    const subTreePromise = directories.reduce((treePromise, segment) => {
-      return treePromise.then(tree =>  {
-        const subTreeSha = find(tree.tree, { path: segment }).sha;
-        return this.getTree(subTreeSha);
-      });
-    }, baseTree);
+    const subTreePromise = directories.reduce((treePromise, segment) => treePromise.then((tree) => {
+      const subTreeSha = find(tree.tree, { path: segment }).sha;
+      return this.getTree(subTreeSha);
+    }), baseTree);
     return subTreePromise.then(subTree => find(subTree.tree, { path: filename }));
   }
 
   toBase64(str) {
-    return Promise.resolve(
-      Base64.encode(str)
-    );
+    return Promise.resolve(Base64.encode(str));
   }
 
   uploadBlob(item) {
-    const content = this.base64(item.raw);//item instanceof AssetProxy ? item.toBase64() : this.toBase64(item.raw);
+    const content = this.base64(item.raw);// item instanceof AssetProxy ? item.toBase64() : this.toBase64(item.raw);
 
-    return content.then(contentBase64 => this.request(`${ this.repoURL }/git/blobs`, {
-      method: "POST",
+    return content.then(contentBase64 => this.request(`${this.repoURL}/git/blobs`, {
+      method: 'POST',
       body: JSON.stringify({
         content: contentBase64,
-        encoding: "base64",
+        encoding: 'base64',
       }),
     }).then((response) => {
       item.sha = response.sha;
@@ -728,7 +712,9 @@ export default class API {
           if (fileOrDir = fileTree[obj.path]) {
             added[obj.path] = true;
             if (fileOrDir.file) {
-              updates.push({ path: obj.path, mode: obj.mode, type: obj.type, sha: fileOrDir.sha });
+              updates.push({
+                path: obj.path, mode: obj.mode, type: obj.type, sha: fileOrDir.sha,
+              });
             } else {
               updates.push(this.updateTree(obj.sha, obj.path, fileOrDir));
             }
@@ -737,21 +723,23 @@ export default class API {
         for (filename in fileTree) {
           fileOrDir = fileTree[filename];
           if (added[filename]) { continue; }
-          updates.push(
-            fileOrDir.file ?
-              { path: filename, mode: "100644", type: "blob", sha: fileOrDir.sha } :
-              this.updateTree(null, filename, fileOrDir)
-          );
+          updates.push(fileOrDir.file ?
+            {
+              path: filename, mode: '100644', type: 'blob', sha: fileOrDir.sha,
+            } :
+            this.updateTree(null, filename, fileOrDir));
         }
         return Promise.all(updates)
           .then(tree => this.createTree(sha, tree))
-          .then(response => ({ path, mode: "040000", type: "tree", sha: response.sha, parentSha: sha }));
+          .then(response => ({
+            path, mode: '040000', type: 'tree', sha: response.sha, parentSha: sha,
+          }));
       });
   }
 
   createTree(baseSha, tree) {
-    return this.request(`${ this.repoURL }/git/trees`, {
-      method: "POST",
+    return this.request(`${this.repoURL}/git/trees`, {
+      method: 'POST',
       body: JSON.stringify({ base_tree: baseSha, tree }),
     });
   }
@@ -775,9 +763,11 @@ export default class API {
   }
 
   createCommit(message, treeSha, parents, author, committer) {
-    return this.request(`${ this.repoURL }/git/commits`, {
-      method: "POST",
-      body: JSON.stringify({ message, tree: treeSha, parents, author, committer }),
+    return this.request(`${this.repoURL}/git/commits`, {
+      method: 'POST',
+      body: JSON.stringify({
+        message, tree: treeSha, parents, author, committer,
+      }),
     });
   }
 }

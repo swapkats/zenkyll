@@ -50,3 +50,8 @@
 .hidden {
   visibility: hidden;
 }
+
+.post-list-card {
+  width: 600px;
+  margin: 80px 0px 40px 40px !important;
+}
