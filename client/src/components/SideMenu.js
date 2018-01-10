@@ -11,13 +11,24 @@ const { Sider, Content, Header } = Layout;
 class SideMenu extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { collapsed: false };
+    this.state = { collapsed: props.initiallyCollapsed };
   }
+
+  static defaultProps = {
+    initiallyCollapsed: false,
+  };
 
   toggle = () => {
     this.setState({
       collapsed: !this.state.collapsed,
     });
+  }
+
+  componentWillReceiveProps(props) {
+    const previouslyCollapsed = this.props.initiallyCollapsed;
+    if (props.initiallyCollapsed != previouslyCollapsed) {
+      this.setState({ collapsed: props.initiallyCollapsed });
+    }
   }
 
   onTopMenuClick = (item) => {

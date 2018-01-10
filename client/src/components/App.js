@@ -23,6 +23,7 @@ class App extends Component {
             <AuthRoute exact path='/register' component={Register} />
             <ProtectedRoute exact path='/site/:site' component={Site} />
             <ProtectedRoute exact path='/site/:site/:collection' component={Site} />
+            <ProtectedRoute exact path='/site/:site/:collection/:item' component={Site} />
             <Route component={NoMatch} />
           </Switch>
         </FetchUser>
