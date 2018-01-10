@@ -1,6 +1,9 @@
 import axios from 'axios';
 import API from '../lib/github/API';
-const reportError = err => console.log(err);
+const reportError = err => {
+  console.log(err)
+  return;
+};
 
 const fetchUser = token => (dispatch) => {
   const api = new API({ token });
@@ -78,4 +81,29 @@ const fetchCollection = (collection, repo) => (dispatch, getState) => {
     }).catch(reportError);
 };
 
-export { setGithubToken, fetchUser, fetchRepos, fetchBranches, fetchCollection };
+const fetchCollectionItem = (repo, collection, item) => (dispatch, getState) => {
+  const state = getState();
+  const { user: { token: { token } } } = state;
+
+  dispatch({
+    type: 'COLLECTIONS_LOADING_START',
+  });
+
+  // token = tokenParam || (!!token && token.token);
+  //
+  // if(!token) { return; }
+  const api = new API({ token, repo: `swapkats/${repo}` });
+  api.getEntriesByFile(`_${collection}/${item}`)
+    .then((data) => {
+      dispatch({
+        type: 'UPDATE_COLLECTIONS_ITEM',
+        key: collection,
+        data,
+      });
+      dispatch({
+        type: 'COLLECTIONS_LOADING_STOP',
+      });
+    }).catch(reportError);
+};
+
+export { setGithubToken, fetchUser, fetchRepos, fetchBranches, fetchCollection, fetchCollectionItem };

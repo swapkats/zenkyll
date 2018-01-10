@@ -2,24 +2,47 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import moment from 'moment';
-import { Menu, Icon, Button, List, Layout, Dropdown, Card } from 'antd';
-import './site.css';
+import { Menu, Icon, Button, Spin, Layout, Dropdown, Card } from 'antd';
+import { fetchCollectionItem } from '../actions/github';
+import './edit.css';
+const { Content } = Layout;
 
 class Edit extends React.Component {
-  componentDidMount() {
-    const { site, collection = 'posts', item } = this.props.match.params;
-
+  constructor(props) {
+    super(props);
+    this.state = { form: {}};
   }
+
+  componentDidMount() {
+    const { site, collection, item } = this.props.match.params;
+    this.props.fetchCollectionItem(site, collection, item);
+  }
+
+  onFormChange = (key, val) => {
+    const { form } = this.state;
+    form[key] = val;
+    this.setState({ form });
+  }
+
+  static defaultProps = {
+    loading: true,
+  };
+
   render() {
-    const { match } = this.props;
-    // console.log(loading);
+    const { match, loading, meta = {} } = this.props;
+    const { form } = this.state;
+    if (loading && !!meta) { return <Spin style={{position: 'fixed', top: '50%', left: '50%'}} />; }
     return (
-      <h1>
-        Edit
-      </h1>
+      <Layout>
+        <Content>
+          <input type="text" defaultValue={meta.title} value={form.title} onChange={e => this.onFormChange('title', e.target.value)} className="input-title"/>
+        </Content>
+      </Layout>
     );
   }
 }
 
 export default connect(state => ({
-}), {  })(withRouter(Edit));
+  loading: state.collections.loading,
+  meta: state.collections.activeItem.meta,
+}), { fetchCollectionItem })(withRouter(Edit));

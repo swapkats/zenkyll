@@ -29,6 +29,17 @@ export default class API {
       .then((files) => this.fetchFiles(this, files));
   }
 
+  getEntriesByFile(filePath) {
+    return new Promise((resolve, reject) => {
+      this.readFile(filePath).then((res) => {
+        const data = this.parseMetaData(res);
+        resolve({ filePath, meta: data.metadata, content: data.content });
+      }).catch((err) => {
+        reject(err);
+      });
+    });
+  }
+
   user() {
     return this.request('/user');
   }
