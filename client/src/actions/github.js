@@ -1,5 +1,6 @@
 import axios from 'axios';
 import API from '../lib/github/API';
+const reportError = err => console.log(err);
 
 const fetchUser = token => (dispatch) => {
   const api = new API({ token });
@@ -8,11 +9,7 @@ const fetchUser = token => (dispatch) => {
       type: 'UPDATE_USER',
       data,
     });
-  }).catch(() => {
-    // dispatch({
-    //   type: 'UNSET_TOKENS',
-    // });
-  });
+  }).catch(reportError);
 };
 
 const fetchRepos = tokenParam => (dispatch, getState) => {
@@ -30,11 +27,7 @@ const fetchRepos = tokenParam => (dispatch, getState) => {
       type: 'UPDATE_REPOS',
       data,
     });
-  }).catch(() => {
-    // dispatch({
-    //   type: 'UNSET_TOKENS',
-    // });
-  });
+  }).catch(reportError);
 };
 
 
@@ -48,11 +41,7 @@ const fetchBranches = (token, branch) => (dispatch, getState) => {
       type: 'UPDATE_BRANCHES',
       data,
     });
-  }).catch(() => {
-    // dispatch({
-    //   type: 'UNSET_TOKENS',
-    // });
-  });
+  }).catch(reportError);
 };
 
 const setGithubToken = (token, scope) => (dispatch) => {
@@ -64,22 +53,29 @@ const setGithubToken = (token, scope) => (dispatch) => {
   dispatch(fetchUser(token));
 };
 
-const fetchPosts = (repo) => (dispatch, getState) => {
+const fetchCollection = (collection, repo) => (dispatch, getState) => {
   const state = getState();
   const { user: { token: { token } } } = state;
+
+  dispatch({
+    type: 'COLLECTIONS_LOADING_START',
+  });
 
   // token = tokenParam || (!!token && token.token);
   //
   // if(!token) { return; }
-  const api = new API({ token, repo: 'swapkats/'+repo });
-  api.getEntriesByFolder('_posts')
-    .then(data => {
+  const api = new API({ token, repo: `swapkats/${repo}` });
+  api.getEntriesByFolder(`_${collection}`)
+    .then((data) => {
       dispatch({
         type: 'UPDATE_COLLECTIONS_POSTS',
-        key: 'posts',
+        key: collection,
         data,
-      })
-    })
+      });
+      dispatch({
+        type: 'COLLECTIONS_LOADING_STOP',
+      });
+    }).catch(reportError);
 };
 
-export { setGithubToken, fetchUser, fetchRepos, fetchBranches, fetchPosts };
+export { setGithubToken, fetchUser, fetchRepos, fetchBranches, fetchCollection };

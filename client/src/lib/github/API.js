@@ -6,9 +6,11 @@ import semaphore from 'semaphore';
 import jsyaml from 'js-yaml';
 // import AssetProxy from "../valueObjects/AssetProxy";
 // import { SIMPLE, EDITORIAL_WORKFLOW, status } from "Constants/publishModes";
-import { APIError } from '../valueObjects/errors';
+// import APIError from '../valueObjects/errors';
 import { fileExtension } from '../pathHelper';
 
+
+const APIError = window.Error;
 const CMS_BRANCH_PREFIX = 'jekyll_press/';
 const MAX_CONCURRENT_DOWNLOADS = 10;
 

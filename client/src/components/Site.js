@@ -2,16 +2,20 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import moment from 'moment';
+import SideMenu from './SideMenu';
 import { Menu, Icon, Button, List, Layout, Dropdown, Card } from 'antd';
 import './site.css';
-import { fetchPosts } from '../actions/github';
+import { fetchCollection } from '../actions/github';
 
 const SubMenu = Menu.SubMenu;
 const { Sider, Content, Header } = Layout;
 
-class Repos extends React.Component {
-  state = {
-    collapsed: false,
+class Site extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      collapsed: true,
+    }
   }
 
   toggleCollapsed = () => {
@@ -20,109 +24,40 @@ class Repos extends React.Component {
     });
   }
 
-  componentDidMount() {
-    this.props.fetchPosts(this.props.match.params.site);
+  componentWillMount() {
+    let { site, collection } = this.props.match.params;
+    collection = collection || 'posts';
+    this.props.fetchCollection(collection, site);
   }
 
   componentWillReceiveProps(props) {
-
-  }
-
-  toggle = () => {
-    this.setState({
-      collapsed: !this.state.collapsed,
-    });
-  }
-
-  onTopMenuClick = (item) => {
-    if (item.key == 'create-new') {
-      this.props.history.push('/');
-      return;
+    const { site, collection } = props.match.params;
+    const { loading, collections } = props;
+    console.log(collection && !collections[collection] && !loading)
+    if (collection && !collections[collection] && !loading) {
+      this.props.fetchCollection(collection, site);
     }
-    this.props.history.push('/site/' + item.key);
   }
-
-  menu = (
-    <Menu onClick={this.onTopMenuClick}>
-      {this.props.sites.map(site => (
-        <Menu.Item key={site.repo}>{site.repo}</Menu.Item>
-      ))}
-      <Menu.Divider />
-      <Menu.Item key="create-new">Create New Site</Menu.Item>
-    </Menu>
-  );
 
   render() {
-    const { route, posts } = this.props;
-    console.log(posts)
+    const { route, collections, loading, match } = this.props;
     const { collapsed } = this.state;
+    let { collection = 'posts' } = match.params;
+    const listItems = collections[collection] || [];
+    // console.log(loading);
     return (
       <Layout style={{height: '100%'}}>
-        <Sider
-          trigger={null}
-          collapsible
-          collapsed={this.state.collapsed}
-          className="sider"
-        >
-          <Dropdown overlay={this.menu} trigger={['click', 'hover']}>
-            <div className={collapsed ? "dropdown-button hidden" : "dropdown-button"}>
-              <div className="dropdown-text">
-                {this.props.match.params.site}
-              </div>
-              <Icon type="down" />
-            </div>
-          </Dropdown>
-          <Menu
-            defaultSelectedKeys={['2']}
-            defaultOpenKeys={['sub1']}
-            mode="inline"
-            className="top-menu"
-            inlineCollapsed={collapsed}
-          >
-              <Menu.Item key="1">
-                <Icon type="clock-circle-o" />
-                <span>History</span>
-              </Menu.Item>
-              <Menu.Item key="2">
-                <Icon type="copy" />
-                <span>Posts</span>
-              </Menu.Item>
-              <Menu.Item key="3">
-                <Icon type="edit" />
-                <span>Drafts</span>
-              </Menu.Item>
-              <Menu.Item key="4">
-                <Icon type="upload" />
-                <span>Uploads</span>
-              </Menu.Item>
-              <Menu.Item key="5">
-                <Icon type="setting" />
-                <span>Settings</span>
-              </Menu.Item>
-          </Menu>
-          <Menu
-            selectedKeys={[]}
-            mode="inline"
-            className="collapse-menu"
-            onClick={this.toggle}
-            inlineCollapsed={collapsed}
-          >
-            <Menu.Item key="1" >
-              <Icon type={collapsed ? "menu-unfold" : "menu-fold"} />
-              <span>{collapsed ? "Expand" : "Collapse"} Menu</span>
-            </Menu.Item>
-          </Menu>
-        </Sider>
+        <SideMenu />
         <Layout>
           <Content>
-            <Card className="post-list-card">
+            <Card title={collection.toUpperCase()} className="post-list-card">
               <List
                 className="post-list"
-                // Add Loading
                 itemLayout="horizontal"
-                dataSource={posts}
+                dataSource={listItems}
+                loading={loading}
                 renderItem={item => (
-                  <List.Item actions={[<a>{item.meta.published ? 'unpublish' : 'publish'}</a>, <a>edit</a>]}>
+                  <List.Item actions={[<a>{item.meta.published && collection !== 'drafts' ? 'unpublish' : 'publish'}</a>, <a>edit</a>]}>
                     <List.Item.Meta
                       style={{flex: 1}}
                       title={<a href={item.file.name}>{item.meta.title}</a>}
@@ -140,6 +75,6 @@ class Repos extends React.Component {
 }
 
 export default connect(state => ({
-  sites: state.user.sites,
-  posts: state.collections.posts,
-}), { fetchPosts })(withRouter(Repos));
+  loading: state.collections.loading,
+  collections: state.collections,
+}), { fetchCollection })(withRouter(Site));
