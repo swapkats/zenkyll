@@ -7,3 +7,45 @@
   color: darkslategray;
   width: 100%;
 }
+
+.edit-container {
+  position: relative;
+}
+
+.SplitPane {
+  border-top: 1px solid #eee;
+}
+
+.Pane1 > div {
+  height: 100%;
+}
+
+.Pane > div {
+  overflow: auto !important;
+}
+
+.ace-github .ace_marker-layer .ace_active-line {
+  background-color: #e6f7ff !important;
+}
+
+.edit-layout {
+  height: 100%;
+  background: #f9f9f9 !important;
+}
+
+.ace-github .ace_gutter {
+  background: #f9f9f9 !important;
+}
+
+.Pane2 {
+  background: #fff;
+  border-left: 2px solid #eee;
+}
+
+.edit-header {
+  padding: 0px 20px 0 40px;
+  margin-bottom: 11px;
+  display: flex;
+  justify-content: space-between;
+  color: dimgray;
+}

@@ -15,10 +15,10 @@ class Site extends React.Component {
     const { route, match } = this.props;
     const { item } = match.params;
     return (
-      <Layout style={{height: '100%'}}>
+      <Layout style={{height: '100%', backgroundColor: '#fcfcfc'}}>
         <SideMenu initiallyCollapsed={!!item} />
-        <Layout>
-          <Content>
+        <Layout style={{height: '100%'}}>
+          <Content style={{height: '100%'}}>
             <Switch>
               <Route exact path='/site/:site' component={ListPage} />
               <Route exact path='/site/:site/:collection' component={ListPage} />

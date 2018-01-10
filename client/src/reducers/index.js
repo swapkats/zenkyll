@@ -5,6 +5,7 @@ import repos from './repos';
 import sites from './sites';
 import branches from './branches';
 import collections from './collections';
+import markdown from './markdown';
 
 const rootReducer = combineReducers({
   user,
@@ -13,6 +14,7 @@ const rootReducer = combineReducers({
   sites,
   branches,
   collections,
+  markdown
 });
 
 export default rootReducer;
