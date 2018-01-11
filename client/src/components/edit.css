@@ -49,3 +49,25 @@
   justify-content: space-between;
   color: dimgray;
 }
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  background: #fff !important;
+  padding: 0 40px !important;
+  border-top: 1px solid #eee;
+}
+
+.footer-cta {
+  padding: 5px 10px !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  border-width: 0 0 0 1px !important;
+  text-transform: uppercase;
+  font-size: 0.8rem !important;
+}
+
+.footer-cta-publish {
+  color: #1890ff !important;
+  border-right-width: 1px !important;
+}

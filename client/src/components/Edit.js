@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import moment from 'moment';
-import { Menu, Icon, Button, Spin, Layout, Dropdown, Card } from 'antd';
 import { debounce } from 'lodash'
 import { convertMarkdown, toggleScrolling } from '../actions/editor';
 import { fetchCollectionItem } from '../actions/github';
@@ -13,7 +12,8 @@ import Preview from './Preview';
 import SplitPane from 'react-split-pane';
 import Panel from '../components/Panel';
 import './edit.css';
-const { Content } = Layout;
+import { Menu, Icon, Button, Spin, Layout, Dropdown, Card } from 'antd';
+const { Content, Footer } = Layout;
 
 class Edit extends React.Component {
   constructor(props) {
@@ -95,6 +95,28 @@ class Edit extends React.Component {
     loading: true,
   };
 
+  handleMenuClick(e) {
+    console.log('click', e);
+  }
+
+  menu = (
+    <Menu onClick={this.handleMenuClick}>
+      <Menu.Item key="1">Unpublish</Menu.Item>
+      <Menu.Item key="2">Save as Draft</Menu.Item>
+      <Menu.Item key="3">Publish</Menu.Item>
+    </Menu>
+  );
+
+  renderToolbar = () => (
+    <div>
+      <Button>H1</Button>
+      <Button>H2</Button>
+      <Button>H3</Button>
+      <Button><strong>B</strong></Button>
+      <Button><i>i</i></Button>
+    </div>
+  )
+
   render() {
     const { wordCount, markdown, html, filePath } = this.props
     const { match, content, loading, meta = {} } = this.props;
@@ -124,6 +146,17 @@ class Edit extends React.Component {
               </Panel>
             </SplitPane>
           </div>
+          <Footer className="footer">
+              {this.renderToolbar()}
+              <div>
+                <Button className="footer-cta">Edit Meta Data</Button>
+                <Dropdown overlay={this.menu} placement="topRight">
+                  <Button className="footer-cta footer-cta-publish">
+                    Publish <Icon type="down" />
+                  </Button>
+                </Dropdown>
+              </div>
+          </Footer>
         </Content>
       </Layout>
     );
