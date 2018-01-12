@@ -3,7 +3,7 @@
   border: 0;
   outline: 0;
   padding: 40px 20px 0 40px;
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: darkslategray;
   width: 100%;
 }
@@ -70,4 +70,9 @@
 .footer-cta-publish {
   color: #1890ff !important;
   border-right-width: 1px !important;
+}
+
+.ant-layout-footer button {
+  border-width: 0 1px 0 0 !important;
+  border-radius: 0 !important;
 }

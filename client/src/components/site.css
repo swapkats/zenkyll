@@ -60,3 +60,20 @@
   padding-top: 0;
   padding-bottom: 0;
 }
+
+.ant-layout-sider-collapsed {
+  max-width: 40px !important;
+  min-width: 40px !important;
+  width: 40px !important;
+}
+
+.ant-layout-sider-children .ant-menu-inline-collapsed {
+  width: 40px !important;
+}
+
+.ant-layout-sider-children .ant-menu-inline-collapsed > .ant-menu-item {
+  padding: 0 10px !important;
+  margin: 0 !important;
+  line-height: 33px;
+  height: 33px !important;
+}
