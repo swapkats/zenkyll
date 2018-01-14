@@ -22,6 +22,7 @@ class Editor extends React.Component{
     this.editor = ace.edit(ReactDom.findDOMNode(this))
     this.editor.$blockScrolling = Infinity
     this.editor.getSession().setMode('ace/mode/markdown')
+    this.editor.getSession().getSelection().on('changeCursor', (e) => this.props.onCursorChange(this.editor.getCursorPosition()));
     this.editor.getSession().setUseWrapMode(true)
     this.editor.setTheme('ace/theme/github')
     this.editor.setFontSize(14)
@@ -50,7 +51,7 @@ class Editor extends React.Component{
   }
 
   onChange = () => {
-    this.props.onChange(this.editor.getValue())
+    this.props.onChange(this.editor.getValue(), this.editor.getCursorPosition())
   }
 
   render () {

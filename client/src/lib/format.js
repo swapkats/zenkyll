@@ -47,8 +47,15 @@ export function getCursorState (cm, pos) {
 	return cs;
 }
 
-export function applyFormat (cm, key) {
-	var cs = getCursorState(cm);
+export function applyFormat (cs, key) {
+	// var cs = getCursorState(cm);
+	var cm = {
+		getCursor: pos => pos == 'start' ? 0 : cs.column,
+		getLine: () => cs.row,
+		replaceRange: () => {},
+		setSelection: () => {},
+		focus: () => {},
+	}
 	var format = FORMATS[key];
 	operations[format.type + (cs[key] ? 'Remove' : 'Apply')](cm, format);
 }

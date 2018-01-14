@@ -12,6 +12,7 @@ import Preview from './Preview';
 import SplitPane from 'react-split-pane';
 import Panel from '../components/Panel';
 import './edit.css';
+import { applyFormat } from '../lib/format';
 import { Menu, Icon, Button, Spin, Layout, Dropdown, Card } from 'antd';
 const { Content, Footer } = Layout;
 
@@ -30,11 +31,11 @@ class Edit extends React.Component {
   componentDidMount() {
     const { site, collection, item } = this.props.match.params;
     this.props.fetchCollectionItem(site, collection, item);
-    if (!this.refs.editor || !this.refs.preview) { return; }
-    const editor = ReactDom.findDOMNode(this.refs.editor)
-    const preview = ReactDom.findDOMNode(this.refs.preview)
-    this.onEditorScroll = this.sync(editor, preview, 'editor')
-    this.onPreviewScroll = this.sync(preview, editor, 'preview')
+    // if (!this.refs.editor || !this.refs.preview) { return; }
+    // const editor = ReactDom.findDOMNode(this.refs.editor)
+    // const preview = ReactDom.findDOMNode(this.refs.preview)
+    // this.onEditorScroll = this.sync(editor, preview, 'editor')
+    // this.onPreviewScroll = this.sync(preview, editor, 'preview')
 
     if (this.props.isScrolling) {
       this.bindEvents()
@@ -49,6 +50,8 @@ class Edit extends React.Component {
       // this.unbindEvents()
     }
   }
+
+  onCursorChange = cur => this.setState({ cur })
 
   sync (target, other, scrollingElName) {
     return () => {
@@ -72,7 +75,7 @@ class Edit extends React.Component {
     ReactDom.findDOMNode(this.refs.preview).removeEventListener('scroll', this.onPreviewScroll)
   }
 
-  onChange = (value) => {
+  onChange = (value, cursorPos) => {
     if (this.debouncedChange) {
       this.debouncedChange(value)
     } else {
@@ -109,11 +112,11 @@ class Edit extends React.Component {
 
   renderToolbar = () => (
     <div>
-      <Button>H1</Button>
-      <Button>H2</Button>
-      <Button>H3</Button>
-      <Button><strong>B</strong></Button>
-      <Button><i>i</i></Button>
+      <Button onClick={() => applyFormat(this.state.cur, 'h1')}>H1</Button>
+      <Button onClick={() => applyFormat(this.state.cur, 'h1')}>H2</Button>
+      <Button onClick={() => applyFormat(this.state.cur, 'h1')}>H3</Button>
+      <Button onClick={() => applyFormat(this.state.cur, 'h1')}><strong>B</strong></Button>
+      <Button onClick={() => applyFormat(this.state.cur, 'h1')}><i>i</i></Button>
     </div>
   )
 
@@ -139,7 +142,7 @@ class Edit extends React.Component {
           <div style={{position: 'relative', flex: 1}}>
             <SplitPane split='vertical' defaultSize='50%' primary='second'>
               <Panel ref='editor'>
-                <Editor value={markdown} onChange={this.onChange} />
+                <Editor value={markdown} onChange={this.onChange} onCursorChange={this.onCursorChange} />
               </Panel>
               <Panel ref='preview' overflowY>
                 <Preview value={html} />

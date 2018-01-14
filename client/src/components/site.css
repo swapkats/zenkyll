@@ -71,9 +71,18 @@
   width: 40px !important;
 }
 
-.ant-layout-sider-children .ant-menu-inline-collapsed > .ant-menu-item {
+.sider .ant-layout-sider-children .ant-menu-item {
   padding: 0 10px !important;
   margin: 0 !important;
   line-height: 33px;
   height: 33px !important;
+  border-top: 1px solid transparent;
+}
+
+.ant-layout-sider-children .ant-menu-inline-collapsed .ant-menu-icon {
+  border-top-color: #eee;
+}
+
+.sider .ant-layout-sider-children .ant-menu-item .anticon {
+  font-size: 14px !important
 }
