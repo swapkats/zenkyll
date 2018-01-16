@@ -26,8 +26,9 @@ gem 'puma', '~> 3.7'
 # gem 'rack-cors'
 
 gem 'omniauth'
-gem 'devise'
-gem 'devise_token_auth'
+# gem 'devise'
+gem 'devise', git: 'https://github.com/plataformatec/devise' #, ref: '88e9a85'
+gem 'devise_token_auth', git: 'https://github.com/lynndylanhurley/devise_token_auth'
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
