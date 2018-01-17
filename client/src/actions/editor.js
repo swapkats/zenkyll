@@ -12,6 +12,7 @@ function updateMarkdown (markdown = '') {
 }
 
 export function convertMarkdown (markdown) {
+  console.log(markdown);
   return updateMarkdown(markdown)
 }
 

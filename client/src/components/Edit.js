@@ -31,29 +31,27 @@ class Edit extends React.Component {
   componentDidMount() {
     const { site, collection, item } = this.props.match.params;
     this.props.fetchCollectionItem(site, collection, item);
-    // if (!this.refs.editor || !this.refs.preview) { return; }
-    // const editor = ReactDom.findDOMNode(this.refs.editor)
-    // const preview = ReactDom.findDOMNode(this.refs.preview)
-    // this.onEditorScroll = this.sync(editor, preview, 'editor')
-    // this.onPreviewScroll = this.sync(preview, editor, 'preview')
-
-    if (this.props.isScrolling) {
-      this.bindEvents()
-    }
+    if (!this.refs.editor || !this.refs.preview) { return; }
+    const editor = ReactDom.findDOMNode(this.refs.editor)
+    const preview = ReactDom.findDOMNode(this.refs.preview)
+    this.onEditorScroll = this.sync(editor, preview, 'editor');
+    this.onPreviewScroll = this.sync(preview, editor, 'preview');
+    this.bindEvents();
   }
 
   componentWillReceiveProps(props) {
     if (props.isScrolling) {
-      // this.unbindEvents()
-      // this.bindEvents()
+      setTimeout(this.unbindEvents, 300)
+      setTimeout(this.bindEvents, 300)
     } else {
-      // this.unbindEvents()
+      setTimeout(this.unbindEvents, 300)
     }
   }
 
-  onCursorChange = cur => this.setState({ cur })
+  onCursorChange = cur => {};//this.setState({ cur })
 
   sync (target, other, scrollingElName) {
+    // console.log('sync')
     return () => {
       const notScrollingElHandler = scrollingElName === 'preview'
         ? this.onEditorScroll
@@ -61,6 +59,7 @@ class Edit extends React.Component {
       const percentage = (target.scrollTop * 100) / (target.scrollHeight - target.offsetHeight)
       other.removeEventListener('scroll', notScrollingElHandler)
       other.scrollTop = percentage * (other.scrollHeight - other.offsetHeight) / 100
+      console.log(other.scrollTop)
       setTimeout(() => other.addEventListener('scroll', notScrollingElHandler), 20)
     }
   }
@@ -71,6 +70,7 @@ class Edit extends React.Component {
   }
 
   unbindEvents = () => {
+    // console.log('unbindEvents')
     ReactDom.findDOMNode(this.refs.editor).removeEventListener('scroll', this.onEditorScroll)
     ReactDom.findDOMNode(this.refs.preview).removeEventListener('scroll', this.onPreviewScroll)
   }
