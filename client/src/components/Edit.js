@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import moment from 'moment';
 import { debounce } from 'lodash'
-import { convertMarkdown, toggleScrolling } from '../actions/editor';
+import { convertMarkdown, toggleScrolling, onCursorChange } from '../actions/editor';
 import { fetchCollectionItem } from '../actions/github';
 import Editor from './Editor';
 import Preview from './Preview';
@@ -48,7 +48,9 @@ class Edit extends React.Component {
     }
   }
 
-  onCursorChange = cur => {};//this.setState({ cur })
+  onCursorChange = cur => {
+    this.props.onCursorChange(cur);
+  };//this.setState({ cur })
 
   sync (target, other, scrollingElName) {
     // console.log('sync')
@@ -112,11 +114,11 @@ class Edit extends React.Component {
 
   renderToolbar = () => (
     <div>
-      <Button onClick={() => applyFormat(this.state.cur, 'h1')}>H1</Button>
-      <Button onClick={() => applyFormat(this.state.cur, 'h1')}>H2</Button>
-      <Button onClick={() => applyFormat(this.state.cur, 'h1')}>H3</Button>
-      <Button onClick={() => applyFormat(this.state.cur, 'h1')}><strong>B</strong></Button>
-      <Button onClick={() => applyFormat(this.state.cur, 'h1')}><i>i</i></Button>
+      <Button onClick={() => this.props.applyFormat('h1', this.state.editor)}>H1</Button>
+      <Button onClick={() => this.props.applyFormat('h2', this.state.editor)}>H2</Button>
+      <Button onClick={() => this.props.applyFormat('h3', this.state.editor)}>H3</Button>
+      <Button onClick={() => this.props.applyFormat('bold', this.state.editor)}><strong>B</strong></Button>
+      <Button onClick={() => this.props.applyFormat('italic', this.state.editor)}><i>i</i></Button>
     </div>
   )
 
@@ -142,7 +144,7 @@ class Edit extends React.Component {
           <div style={{position: 'relative', flex: 1}}>
             <SplitPane split='vertical' defaultSize='50%' primary='second'>
               <Panel ref='editor'>
-                <Editor value={markdown} onChange={this.onChange} onCursorChange={this.onCursorChange} />
+                <Editor value={markdown} onChange={this.onChange} onCursorChange={this.onCursorChange} onComponentRef={editor => this.setState({ editor })}/>
               </Panel>
               <Panel ref='preview' overflowY>
                 <Preview value={html} />
@@ -170,4 +172,4 @@ export default connect(state => ({
   ...state.markdown,
   loading: state.collections.loading,
   meta: state.collections.activeItem.meta,
-}), { fetchCollectionItem, convertMarkdown, toggleScrolling })(withRouter(Edit));
+}), { fetchCollectionItem, convertMarkdown, toggleScrolling, onCursorChange, applyFormat })(withRouter(Edit));

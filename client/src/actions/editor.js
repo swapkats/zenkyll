@@ -12,8 +12,14 @@ function updateMarkdown (markdown = '') {
 }
 
 export function convertMarkdown (markdown) {
-  console.log(markdown);
   return updateMarkdown(markdown)
+}
+
+export function onCursorChange(cursor) {
+  return {
+    type: types.CURSOR_CHANGE,
+    cursor,
+  }
 }
 
 export function toggleScrolling () {

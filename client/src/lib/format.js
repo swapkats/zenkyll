@@ -15,9 +15,9 @@ Object.keys(FORMATS).forEach(key => {
 });
 
 export function getCursorState (cm, pos) {
-	pos = pos || cm.getCursor('start');
+	pos = pos || cm.getCursorPosition('start');
 	var cs = {};
-	var token = cs.token = cm.getTokenAt(pos);
+	var token = cs.token = cm.getSession().getTokenAt(pos);
 	if (!token.type) return cs;
 	var tokens = token.type.split(' ');
 	tokens.forEach(t => {
@@ -35,7 +35,7 @@ export function getCursorState (cm, pos) {
 				cs.link_href = true;
 			break;
 			case 'variable-2':
-				var text = cm.getLine(pos.line);
+				var text = cm.session.getLine(pos.line);
 				if (/^\s*\d+\.\s/.test(text)) {
 					cs.oList = true;
 				} else {
@@ -47,35 +47,35 @@ export function getCursorState (cm, pos) {
 	return cs;
 }
 
-export function applyFormat (cs, key) {
-	// var cs = getCursorState(cm);
-	var cm = {
-		getCursor: pos => pos == 'start' ? 0 : cs.column,
-		getLine: () => cs.row,
-		replaceRange: () => {},
-		setSelection: () => {},
-		focus: () => {},
+export function applyFormat (key, cm) {
+	return (dispatch, getState) => {
+		const { editor: { cursor } } = getState();
+		var format = FORMATS[key];
+		//&& cs[key]
+		operations[format.type + (false  ? 'Remove' : 'Apply')](cm, format);
 	}
-	var format = FORMATS[key];
-	operations[format.type + (cs[key] ? 'Remove' : 'Apply')](cm, format);
 }
 
 var operations = {
 	inlineApply (cm, format) {
-		var startPoint = cm.getCursor('start');
-		var endPoint = cm.getCursor('end');
+		var startPoint = cm.getCursorPosition('start');
+		var endPoint = cm.getCursorPosition('end');
 
-		cm.replaceSelection(format.before + cm.getSelection() + format.after);
+		const range = cm.getSelectionRange();
+		cm.session.replace(range, format.before + cm.getSelectedText() + format.after);
+		cm.selection.setRange(range);
 
-		startPoint.ch += format.before.length;
-		endPoint.ch += format.after.length;
-		cm.setSelection(startPoint, endPoint);
+		// cm.replaceSelection(format.before + cm.getSelection() + format.after);
+
+		// startPoint.ch += format.before.length;
+		// endPoint.ch += format.after.length;
+		// cm.setSelection(startPoint, endPoint);
 		cm.focus();
 	},
 	inlineRemove (cm, format) {
-		var startPoint = cm.getCursor('start');
-		var endPoint = cm.getCursor('end');
-		var line = cm.getLine(startPoint.line);
+		var startPoint = cm.getCursorPosition('start');
+		var endPoint = cm.getCursorPosition('end');
+		var line = cm.session.getLine(startPoint.line);
 
 		var startPos = startPoint.ch;
 		while (startPos) {
@@ -96,24 +96,31 @@ var operations = {
 		var start = line.slice(0, startPos);
 		var mid = line.slice(startPos + format.before.length, endPos);
 		var end = line.slice(endPos + format.after.length);
-		cm.replaceRange(start + mid + end, { line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: line.length + 1 });
-		cm.setSelection({ line: startPoint.line, ch: start.length }, { line: startPoint.line, ch: (start + mid).length });
+		const range = cm.getSelectionRange();
+		cm.session.replace(range, start + mid + end);
+		cm.selection.setRange(range);
+		// cm.replaceRange(start + mid + end, { line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: line.length + 1 });
+		// cm.setSelection({ line: startPoint.line, ch: start.length }, { line: startPoint.line, ch: (start + mid).length });
 		cm.focus();
 	},
 	blockApply (cm, format) {
-		var startPoint = cm.getCursor('start');
-		var line = cm.getLine(startPoint.line);
+		var startPoint = cm.getCursorPosition('start');
+		var line = cm.session.getLine(startPoint.line);
 		var text = format.before + ' ' + (line.length ? line : format.placeholder);
-		cm.replaceRange(text, { line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: line.length + 1 });
-		cm.setSelection({ line: startPoint.line, ch: format.before.length + 1 }, { line: startPoint.line, ch: text.length });
+		const range = cm.getSelectionRange();
+		cm.session.replace(range, text);
+		cm.selection.setRange(range);
 		cm.focus();
 	},
 	blockRemove (cm, format) {
-		var startPoint = cm.getCursor('start');
-		var line = cm.getLine(startPoint.line);
+		var startPoint = cm.getCursorPosition('start');
+		var line = cm.session.getLine(startPoint.line);
 		var text = line.replace(format.re, '');
-		cm.replaceRange(text, { line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: line.length + 1 });
-		cm.setSelection({ line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: text.length });
+		const range = cm.getSelectionRange();
+		cm.session.replace(cm.getSelectionRange(), text);
+		cm.selection.setRange(range);
+		// cm.replaceRange(text, { line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: line.length + 1 });
+		// cm.setSelection({ line: startPoint.line, ch: 0 }, { line: startPoint.line, ch: text.length });
 		cm.focus();
 	},
 };

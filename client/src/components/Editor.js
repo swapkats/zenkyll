@@ -35,6 +35,7 @@ class Editor extends React.Component{
     this.editor.setOption('vScrollBarAlwaysVisible', false)
     this.editor.setShowPrintMargin(false)
     this.editor.focus()
+    this.props.onComponentRef(this.editor);
     // FIXME
     this.interval = setInterval(() => this.editor.resize(), 100)
   }
